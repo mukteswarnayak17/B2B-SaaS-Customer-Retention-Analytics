@@ -2,7 +2,7 @@
 
 An end-to-end analysis of customer retention and revenue churn for a B2B SaaS company with 1,200 commercial accounts and $971.4K in Monthly Recurring Revenue (MRR). Five relational Kaggle datasets were cleaned in Excel Power Query, modelled as a star schema in Power BI, and presented in a 2-page interactive dashboard. Key metrics were then cross-checked in MySQL with independent SQL queries.
 
----
+
 
 ## 📌 Project Overview
 
@@ -16,7 +16,7 @@ The analysis covers three areas:
 
 **Workflow:** Kaggle CSVs → Excel / Power Query → Power BI star schema → 2-page dashboard → MySQL → SQL validation
 
----
+
 
 ## 🎯 Business Objectives
 
@@ -27,7 +27,7 @@ The analysis covers three areas:
 - Assess support performance (volume, resolution time, CSAT) and product adoption (seat utilization).
 - Turn the findings into practical retention actions.
 
----
+
 
 ## 📊 Dataset
 
@@ -42,7 +42,7 @@ The analysis covers three areas:
 | `users` | Provisioned users per account, with roles (Admin / Member / Viewer) | 21,884 |
 | **Total** | | **44,384** |
 
----
+
 
 ## 🛠️ Tools & Technologies
 
@@ -52,7 +52,7 @@ The analysis covers three areas:
 | Data modelling & BI | Power BI Desktop, DAX, star schema design |
 | Validation | MySQL, MySQL Workbench, SQL (joins, aggregations, `CASE WHEN`, CTEs) |
 
----
+
 
 ## 🔄 Data Preparation & Cleaning
 
@@ -69,7 +69,7 @@ All five CSV files were cleaned in **Excel Power Query** before being loaded int
 
 The SQL validation scripts also handle mixed-case status values (for example `'open'` / `'Open'`, `LOWER(priority)`) so that results match the Power BI logic.
 
----
+
 
 ## 🧩 Data Modeling
 
@@ -96,7 +96,7 @@ erDiagram
 
 **Why this design:** one account dimension filters all fact tables, so the Plan, Industry, Company Size and Year slicers apply consistently across every visual on both pages.
 
----
+
 
 ## 📈 Power BI Dashboard
 
@@ -142,7 +142,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 - How much of the support queue is resolved vs. still open?
 - Are customers using the seats they bought, by plan?
 
----
+
 
 ## ❓ Business Questions Answered
 
@@ -155,7 +155,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 7. What share of support tickets is resolved vs. still open?
 8. Are customers actively using the seats they purchased, across plan tiers?
 
----
+
 
 ## 📊 Key KPIs
 
@@ -170,7 +170,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 | Overdue Balance | $739.60K | Unpaid balance on open invoices (void invoices excluded) | Measures collections exposure |
 | Avg Resolution Time | 40.8 hrs | Average hours to resolve a support ticket | Support efficiency |
 
----
+
 
 ## 🔍 Key Business Insights
 
@@ -209,7 +209,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 - **What it means:** Neither the support queue nor seat adoption shows an acute problem at portfolio level.
 - **Why it matters:** The revenue risk sits mainly in billing and high-tier churn, with account-level adoption gaps still worth monitoring.
 
----
+
 
 ## 🗄️ SQL Validation
 
@@ -224,7 +224,7 @@ After the Power BI analysis, the cleaned data was loaded into **MySQL** and quer
 
 Matching the SQL output to the dashboard confirms that the DAX measures, the relationships and the filter logic produce the same numbers as direct queries on the underlying data.
 
----
+
 
 ## 🔁 End-to-End Workflow
 
@@ -248,7 +248,7 @@ SQL Validation Queries
 Validated Insights & Recommendations
 ```
 
----
+
 
 ## 💡 Business Recommendations
 
@@ -263,7 +263,7 @@ Validated Insights & Recommendations
 
 *These recommendations come from descriptive analysis of the dataset. They show where to focus, not proven causes of churn.*
 
----
+
 
 ## 📁 Project Structure
 
@@ -290,7 +290,7 @@ B2B-SaaS-Customer-Retention-Churn-Analysis/
 └── README.md
 ```
 
----
+
 
 ## 🧠 Analytical Skills Demonstrated
 
@@ -304,7 +304,7 @@ B2B-SaaS-Customer-Retention-Churn-Analysis/
 - **Data validation:** reconciling Power BI results against independent MySQL queries
 - **Insight generation:** turning findings into specific, prioritised recommendations
 
----
+
 
 ## 🚀 Project Highlights
 
@@ -315,7 +315,7 @@ B2B-SaaS-Customer-Retention-Churn-Analysis/
 - **Independent SQL validation:** MySQL queries reproduce dashboard totals, including $58.5K churned MRR, $739.6K overdue balance and ticket-level SLA metrics.
 - **Actionable output:** findings tied to specific recommendations, including an account-level high-risk watchlist built with CTEs.
 
----
+
 
 ## 👤 Author
 
