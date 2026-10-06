@@ -83,16 +83,7 @@ The Power BI model is a **star schema** centred on `Accounts` and `Dim_Date`. Ev
 
 `Users` is classified as a dimension in the project files and connects to `Accounts` through `account_id`.
 
-```mermaid
-erDiagram
-    ACCOUNTS ||--o{ SUBSCRIPTIONS : "account_id"
-    ACCOUNTS ||--o{ INVOICES : "account_id"
-    ACCOUNTS ||--o{ SUPPORT_TICKETS : "account_id"
-    ACCOUNTS ||--o{ USERS : "account_id"
-    DIM_DATE ||--o{ SUBSCRIPTIONS : "date"
-    DIM_DATE ||--o{ INVOICES : "date"
-    DIM_DATE ||--o{ SUPPORT_TICKETS : "date"
-```
+
 
 ![Star Schema](Star-Schema-Model.png)
 
@@ -270,32 +261,9 @@ Validated Insights & Recommendations
 
 
 
-## 📁 Project Structure
 
-```text
-B2B-SaaS-Customer-Retention-Churn-Analysis/
-│
-├── data/
-│   └── raw/                  # accounts, subscriptions, invoices, support_tickets, users (CSV)
-├── powerbi/
-│   └── B2B_SaaS_Customer_Churn_Analysis.pbix
-├── dashboard/
-│   └── B2B_SaaS_Customer_Churn_Analysis.pdf
-├── sql/
-│   ├── 00_schema_and_database_setup.sql
-│   ├── 01_mrr_and_churn_by_plan.sql
-│   ├── 02_overdue_balance_by_company_size.sql
-│   ├── 03_license_seat_utilization.sql
-│   ├── 04_support_sla_and_csat_analysis.sql
-│   └── 05_top_10_high_risk_accounts.sql
-├── report/
-│   └── B2B_SaaS_Customer_Retention_Analysis_Project_Report.docx
-├── images/
-│   ├── star-schema-model.png
-│   ├── dashboard-page-1.png
-│   └── dashboard-page-2.png
-└── README.md
-```
+
+
 
 
 
