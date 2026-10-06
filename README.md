@@ -1,6 +1,6 @@
 # B2B SaaS Customer Retention & Churn Analysis
 
-An end-to-end analysis of customer retention and revenue churn for a B2B SaaS company with 1,200 commercial accounts and $971.4K in Monthly Recurring Revenue (MRR). Five relational Kaggle datasets were cleaned in Excel Power Query, modelled as a star schema in Power BI, and presented in a 2-page interactive dashboard. Key metrics were then cross-checked in MySQL with independent SQL queries.
+An end-to-end analysis of customer retention and revenue churn for a B2B SaaS company with 1,200 commercial accounts and $971.4K in Monthly Recurring Revenue (MRR). Five relational Kaggle datasets were cleaned in Excel Power Query, modelled as a star schema in Power BI, and presented in a 2-page interactive dashboard. Key metrics were then cross-checked in MySQL with five SQL scripts.
 
 
 
@@ -12,7 +12,7 @@ The analysis covers three areas:
 
 - **Revenue retention:** MRR by plan, churned vs. at-risk (past due) MRR, and churn by industry.
 - **Operational health:** support volume, resolution time, CSAT, overdue invoices and seat utilization.
-- **Validation:** SQL queries in MySQL that reproduce key dashboard figures.
+- **SQL validation:** five MySQL scripts that reproduce or extend key dashboard figures at account level.
 
 **Workflow:** Kaggle CSVs → Excel / Power Query → Power BI star schema → 2-page dashboard → MySQL → SQL validation
 
@@ -31,15 +31,15 @@ The analysis covers three areas:
 
 ## 📊 Dataset
 
-**Source:** Kaggle B2B SaaS dataset (5 relational CSV files). *Add dataset link here.*
+**Source:** Kaggle B2B SaaS dataset (5 relational CSV files).
 
 | Table | Description | Records |
 | ----- | ----------- | ------: |
-| `accounts` | Company master data: account ID, company name, industry, country, employee count, plan tier, company size | 1,200 |
-| `subscriptions` | Contract data: seats, MRR, status (active / churned / past_due), start and end dates, churn flag | 1,200 |
-| `invoices` | Billing records: amount, invoice date, payment status (paid / open / void / uncollectible), unpaid flag | 14,500 |
-| `support_tickets` | Support tickets: category, priority, resolution hours, CSAT score, ticket status | 5,600 |
-| `users` | Provisioned users per account, with roles (Admin / Member / Viewer) | 21,884 |
+| `accounts` | Company master data: `account_id`, `company_name`, `industry`, `country`, `employee_count`, `signup_date`, `plan`, `company_size` | 1,200 |
+| `subscriptions` | Contract data: `seats`, `mrr`, `status` (active / churned / past_due), `started_on`, `ended_on`, churn and past-due flags | 1,200 |
+| `invoices` | Billing records: `amount`, `invoice_date`, `status` (paid / open / void / uncollectible), `is_unpaid` | 14,500 |
+| `support_tickets` | Support tickets: `category`, `priority`, `opened_at`, `resolved_at`, `resolution_hours`, `satisfaction_score`, `ticket_status` | 5,600 |
+| `users` | Provisioned users per account: `user_id`, `account_id`, `full_name`, `role` (Admin / Member / Viewer), `email` | 21,884 |
 | **Total** | | **44,384** |
 
 
@@ -50,7 +50,7 @@ The analysis covers three areas:
 | ----- | ----- |
 | Data preparation | Microsoft Excel, Power Query |
 | Data modelling & BI | Power BI Desktop, DAX, star schema design |
-| Validation | MySQL, MySQL Workbench, SQL (joins, aggregations, `CASE WHEN`, CTEs) |
+| Database & validation | MySQL, MySQL Workbench, SQL (schema setup, joins, aggregations, `CASE WHEN`, `HAVING`, CTEs) |
 
 
 
@@ -60,14 +60,15 @@ All five CSV files were cleaned in **Excel Power Query** before being loaded int
 
 - Handled null values across the datasets.
 - Verified and corrected data types (dates, numeric fields, flags).
-- Added fields used for analysis, visible in the final model:
-  - `churn_flag` (subscriptions)
-  - `is_unpaid` (invoices)
-  - `Priority_Order` (support tickets, for sorting priority levels)
-- Built a dedicated `Dim_Date` table (Date, Month, MonthNumber, Quarter, Year) to support time filtering.
+- Added a `Dim_Date` table (Date, Month, MonthNumber, Quarter, Year) for time filtering.
+- Added a `Priority_Order` field to `Support_Tickets` to support ordering of priority levels.
+- Used the source flags (`is_churned`, `is_past_due`, `is_unpaid`) as the basis for churn, at-risk and overdue measures.
 - Kept `account_id` consistent across all tables so every table joins cleanly to `Accounts`.
 
-The SQL validation scripts also handle mixed-case status values (for example `'open'` / `'Open'`, `LOWER(priority)`) so that results match the Power BI logic.
+**MySQL load:** the cleaned data was loaded into a `saas_analytics` database using a setup script (`00_schema_and_database_setup.sql`). It creates the five tables and ends with a row-count check per table.
+
+- Date fields, `satisfaction_score` and `resolution_hours` were staged as text (`VARCHAR`) during import, so the queries cast them explicitly.
+- Status values are handled case-insensitively (`'open'` / `'Open'`, `LOWER(priority)`) so the SQL results match the Power BI logic.
 
 
 
@@ -78,8 +79,9 @@ The Power BI model is a **star schema** centred on `Accounts` and `Dim_Date`. Ev
 | Role | Tables |
 | ---- | ------ |
 | Fact tables | `Subscriptions` (MRR, seats, churn), `Invoices` (billing and collections), `Support_Tickets` (SLA and CSAT) |
-| Dimension tables | `Accounts` (industry, plan, company size), `Dim_Date` |
-| Supporting table | `Users` (user-level adoption data, related to `Accounts`) |
+| Dimension tables | `Accounts` (industry, plan, company size), `Dim_Date`, `Users` (user adoption) |
+
+`Users` is classified as a dimension in the project files and connects to `Accounts` through `account_id`.
 
 ```mermaid
 erDiagram
@@ -92,7 +94,7 @@ erDiagram
     DIM_DATE ||--o{ SUPPORT_TICKETS : "date"
 ```
 
-![Star Schema](images/star-schema-model.png)
+![Star Schema](Star-Schema-Model.png)
 
 **Why this design:** one account dimension filters all fact tables, so the Plan, Industry, Company Size and Year slicers apply consistently across every visual on both pages.
 
@@ -104,7 +106,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 
 ### Page 1 — Executive Revenue Retention & Churn Overview
 
-![Page 1](images/dashboard-page-1.png)
+![Page 1](dashboard-views/Page1_Executive_Revenue_Overview.png)
 
 **Purpose:** show how much recurring revenue is secure, lost or at risk, and where.
 
@@ -124,7 +126,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 
 ### Page 2 — Customer Health & Churn Risk Diagnostics
 
-![Page 2](images/dashboard-page-2.png)
+![Page 2](dashboard-views/Page2_Customer_Health_Diagnostics.png)
 
 **Purpose:** show the operational signals around churn risk: support performance, overdue billing and product adoption.
 
@@ -154,6 +156,7 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 6. Where is the overdue invoice balance concentrated?
 7. What share of support tickets is resolved vs. still open?
 8. Are customers actively using the seats they purchased, across plan tiers?
+9. Which high-value accounts show combined risk signals (late payments, low usage, urgent tickets) and need intervention first?
 
 
 
@@ -207,22 +210,23 @@ The dashboard has **2 interactive pages**. Both share the same slicers: **Plan, 
 **7. Support backlog is small, and seat utilization is fairly even across plans.**
 - **Finding:** 91.59% of tickets are resolved and 8.41% are open. Seat utilization is 84.7% (Business), 82.3% (Starter), 80.2% (Enterprise) and 78.6% (Growth), against 77.8% overall.
 - **What it means:** Neither the support queue nor seat adoption shows an acute problem at portfolio level.
-- **Why it matters:** The revenue risk sits mainly in billing and high-tier churn, with account-level adoption gaps still worth monitoring.
+- **Why it matters:** The revenue risk sits mainly in billing and high-tier churn. Account-level adoption gaps are still worth monitoring, and the SQL layer flags them.
 
 
 
 ## 🗄️ SQL Validation
 
-After the Power BI analysis, the cleaned data was loaded into **MySQL** and queried in **MySQL Workbench** to reproduce key dashboard figures independently of DAX. The queries use joins, conditional aggregation, `LOWER()` / `IN` for status handling, and CTEs.
+After the Power BI analysis, the cleaned data was loaded into **MySQL** (`saas_analytics` database) and queried in **MySQL Workbench**. A setup script creates the schema and checks row counts. Five analysis scripts then cross-check the dashboard logic and extend it to account level.
 
 | # | Validation Script | What It Validates |
 | - | ----------------- | ----------------- |
-| 1 | Revenue and Churn by Plan | Active MRR and lost MRR per plan tier (Chart: Total vs Lost MRR by Plan). Churned MRR sums to $58.5K and active MRR to about $880K, matching the dashboard. |
-| 2 | Overdue Invoices by Company Size | Open invoice count, total overdue balance and average invoice size by company size. Totals $739,597.81, matching the $739.60K KPI. |
-| 3 | Support Ticket SLA & CSAT by Category | Ticket count, urgent tickets, average resolution hours and average CSAT per category, for resolved tickets. |
-| 4 | High-Risk Account Early Warning (CTEs) | Combines seat utilization, overdue balance and open urgent tickets for active and past-due accounts, ranked by MRR. Extends the dashboard into an account-level watchlist. |
+| 1 | `01_mrr_and_churn_by_plan.sql` | Accounts, active MRR, lost (churned) MRR and churn rate by plan tier. Reconciles with the Total vs Lost MRR by Plan chart (churned MRR $58.5K, active MRR about $880K). |
+| 2 | `02_overdue_balance_by_company_size.sql` | Open invoice count, total overdue balance and average invoice size by company size, excluding void invoices. Reconciles with the $739.60K Overdue Balance KPI. |
+| 3 | `03_license_seat_utilization.sql` | Seat utilization (assigned users ÷ purchased seats) for active accounts, flagging those below 65%. Supports the Page 2 adoption analysis at account level. |
+| 4 | `04_support_sla_and_csat_analysis.sql` | Ticket count, urgent tickets, average resolution hours and average CSAT by category (resolved tickets). Supports the support-category visuals and the resolution-time and CSAT KPIs. |
+| 5 | `05_top_10_high_risk_accounts.sql` | Early-warning list of the top 10 accounts by MRR that have overdue balances, urgent open tickets or seat utilization below 50%, built with CTEs. |
 
-Matching the SQL output to the dashboard confirms that the DAX measures, the relationships and the filter logic produce the same numbers as direct queries on the underlying data.
+Reproducing the dashboard totals directly from the database confirms that the DAX measures, relationships and filters give the same results as independent queries. Scripts 3 and 5 go further and turn the dashboard's segment-level findings into account-level action lists.
 
 
 
@@ -241,25 +245,26 @@ DAX Measures & KPI Development
         ↓
 2-Page Interactive Dashboard
         ↓
-MySQL (cleaned data loaded)
+MySQL (saas_analytics database)
         ↓
-SQL Validation Queries
+SQL Validation Scripts (01–05)
         ↓
 Validated Insights & Recommendations
 ```
 
-
+---
 
 ## 💡 Business Recommendations
 
 | Finding | Recommendation | Expected Business Benefit |
 | ------- | -------------- | ------------------------- |
 | $33.3K of MRR is past due | Add automated payment retries and in-app payment reminders | Recover part of the at-risk MRR before it becomes churn |
-| Lost MRR is concentrated in Business, Growth and Enterprise | Prioritise proactive check-ins for high-MRR accounts, using the SQL watchlist (Script 4) | Earlier intervention on the accounts where churn costs the most |
+| Lost MRR is concentrated in Business, Growth and Enterprise | Prioritise proactive check-ins for high-MRR accounts, using the high-risk list (Script 5) | Earlier intervention on the accounts where churn costs the most |
 | $524.35K of overdue balance sits with Enterprise | Send invoices earlier and confirm vendor and procurement requirements up front | Faster collection of large balances and better cash flow |
 | Integrations has the most tickets and urgent escalations | Review the most common integration issues in an engineering sprint | Fewer urgent tickets and less support load |
 | Billing tickets are slowest (42.8 hrs) and lowest CSAT (3.96) | Set a faster resolution target for billing issues | Better satisfaction on an issue linked to payment risk |
 | Retail and Healthcare churn above average | Review why these segments cancel and tailor onboarding and success plans | Lower account churn in the highest-churn industries |
+| Some active accounts use a low share of purchased seats (Script 3) | Run adoption outreach for the flagged accounts | Better product usage, lowering downgrade and churn risk |
 
 *These recommendations come from descriptive analysis of the dataset. They show where to focus, not proven causes of churn.*
 
@@ -277,10 +282,12 @@ B2B-SaaS-Customer-Retention-Churn-Analysis/
 ├── dashboard/
 │   └── B2B_SaaS_Customer_Churn_Analysis.pdf
 ├── sql/
-│   ├── 01_revenue_churn_by_plan.sql
-│   ├── 02_overdue_invoices_by_company_size.sql
-│   ├── 03_support_sla_csat_by_category.sql
-│   └── 04_high_risk_accounts_cte.sql
+│   ├── 00_schema_and_database_setup.sql
+│   ├── 01_mrr_and_churn_by_plan.sql
+│   ├── 02_overdue_balance_by_company_size.sql
+│   ├── 03_license_seat_utilization.sql
+│   ├── 04_support_sla_and_csat_analysis.sql
+│   └── 05_top_10_high_risk_accounts.sql
 ├── report/
 │   └── B2B_SaaS_Customer_Retention_Analysis_Project_Report.docx
 ├── images/
@@ -295,13 +302,13 @@ B2B-SaaS-Customer-Retention-Churn-Analysis/
 ## 🧠 Analytical Skills Demonstrated
 
 - **Data cleaning and preparation:** Power Query, null handling, data-type validation
-- **Data transformation:** derived flags, a date dimension, consistent keys across five tables
+- **Data transformation:** a date dimension, a priority-ordering field, consistent keys across five tables
 - **Data modelling:** star schema design with fact and dimension tables and 1:\* relationships
 - **DAX and KPI development:** churn rate, MRR, overdue balance, seat utilization, CSAT and resolution-time measures
 - **Dashboard development:** a 2-page Power BI report with cross-filtering slicers
 - **Business analysis:** revenue-weighted vs. account-weighted churn, revenue at risk, collections exposure
-- **SQL:** joins, conditional aggregation, CTEs, case-insensitive status handling
-- **Data validation:** reconciling Power BI results against independent MySQL queries
+- **SQL:** schema setup, joins, conditional aggregation, `HAVING`, CTEs, explicit type casting, case-insensitive status handling
+- **Data validation:** reconciling Power BI results against MySQL queries, with row-count checks after import
 - **Insight generation:** turning findings into specific, prioritised recommendations
 
 
@@ -310,16 +317,8 @@ B2B-SaaS-Customer-Retention-Churn-Analysis/
 
 - **End-to-end workflow:** ingestion, cleaning, modelling, dashboarding and SQL validation in one project.
 - **Multiple related datasets:** five tables and 44,384 records joined through a common account key.
-- **Star schema model:** three fact tables and a shared account and date dimension supporting both dashboard pages.
-- **Business-focused dashboard:** two pages covering revenue retention and customer health, with eight business questions answered.
-- **Independent SQL validation:** MySQL queries reproduce dashboard totals, including $58.5K churned MRR, $739.6K overdue balance and ticket-level SLA metrics.
-- **Actionable output:** findings tied to specific recommendations, including an account-level high-risk watchlist built with CTEs.
+- **Star schema model:** three fact tables and shared account and date dimensions supporting both dashboard pages.
+- **Business-focused dashboard:** two pages covering revenue retention and customer health, with nine business questions answered.
+- **SQL validation layer:** a MySQL database with five scripts that reproduce dashboard totals ($58.5K churned MRR, $739.6K overdue balance, support SLA and CSAT metrics) and extend them to account level.
+- **Actionable output:** findings tied to specific recommendations, including a CTE-based top-10 high-risk account list.
 
-
-
-## 👤 Author
-
-**Mukteswar Nayak**
-
-GitHub: [your GitHub profile]
-LinkedIn: [your LinkedIn profile]
